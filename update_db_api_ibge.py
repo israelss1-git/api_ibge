@@ -38,7 +38,7 @@ def requisicao_api():
     Retorna um True para existente e false para não
 '''
 def consulta_tabela (tabela, id):
-    cursor = conexaoDB('azure')
+    cursor = conexaoDB()
     cons = cursor.execute(f"SELECT id FROM {tabela} WHERE ID = ?", id)
     s = [True for x in cons if x[0] == id]
     resp = False
@@ -49,14 +49,16 @@ def consulta_tabela (tabela, id):
 '''
     Verifica se o registro existe e seão existir, carrega na tabela
 '''
-def consulta_carrega(tabela, id, nome, sigla = '', fk=0):
-    cursor = conexaoDB('azure')
+def consulta_carrega(tabela, id, nome, sigla = '', fk=0, fk2=0):
+    cursor = conexaoDB()
     cons = consulta_tabela(tabela, id)
     if cons != True:
         if tabela == 'REGIAO':
             cursor.execute(f"INSERT INTO {tabela} VALUES (?,?,?)", id, sigla, nome)
         elif tabela == 'UF':
             cursor.execute(f"INSERT INTO {tabela} VALUES (?,?,?,?)", id, sigla, nome, fk)
+        elif tabela == 'CIDADE':
+            cursor.execute(f"INSERT INTO {tabela} VALUES (?,?,?,?)", id, nome, fk, fk2)
         else:
             cursor.execute(f"INSERT INTO {tabela} VALUES (?,?,?)", id, nome, fk)
         cursor.commit()
@@ -96,7 +98,7 @@ def carrega_distrito():
             sigla = ''
             consulta_carrega('MESORREGIAO', id, nome, sigla, fk)
 
-            # Região INTERMEDIARIA
+            # Região intermediária - Está no mesmo nível que mesorregião
             id = (js['municipio']['regiao-imediata']['regiao-intermediaria']['id'])
             nome = (js['municipio']['regiao-imediata']['regiao-intermediaria']['nome'])
             fk = (js['municipio']['regiao-imediata']['regiao-intermediaria']['UF']['id'])
@@ -110,7 +112,7 @@ def carrega_distrito():
             sigla = ''
             consulta_carrega('MICRORREGIAO', id, nome, sigla, fk)
 
-            # Região imediata
+            # Região imediata - Está no mesmo nível de microrregião
             id = (js['municipio']['regiao-imediata']['id'])
             nome = (js['municipio']['regiao-imediata']['nome'])
             fk = (js['municipio']['regiao-imediata']['regiao-intermediaria']['id'])
@@ -121,8 +123,9 @@ def carrega_distrito():
             id = (js['municipio']['id'])
             nome = (js['municipio']['nome'])
             fk = (js['municipio']['microrregiao']['id'])
+            fk2 = (js['municipio']['regiao-imediata']['id'])
             sigla = ''
-            consulta_carrega('CIDADE', id, nome, sigla, fk)
+            consulta_carrega('CIDADE', id, nome, sigla, fk, fk2)
 
             # Distrito: uma subdivisão de cidade. um conjunto de distritos definemuma região metropolitana dentro de um municipio
             id = (js['id'])
